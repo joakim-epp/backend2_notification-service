@@ -13,13 +13,17 @@ import java.time.Duration;
 @Configuration
 public class RestClientConfig {
 
+    /**
+     * Built from RestClient.builder() rather than the autoconfigured builder: that bean ships in
+     * spring-boot-starter-restclient, which this service does not need for two GET calls.
+     */
     @Bean
-    RestClient restClient(RestClient.Builder builder) {
+    RestClient restClient() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout((int) Duration.ofSeconds(2).toMillis());
         factory.setReadTimeout((int) Duration.ofSeconds(2).toMillis());
 
-        return builder
+        return RestClient.builder()
                 .requestFactory(factory)
                 .requestInterceptor((request, body, execution) -> {
                     String token = incomingAuthHeader();

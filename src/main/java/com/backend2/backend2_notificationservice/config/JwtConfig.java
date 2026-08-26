@@ -1,6 +1,5 @@
 package com.backend2.backend2_notificationservice.config;
 
-import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,11 +35,6 @@ public class JwtConfig {
                     "JWT_SECRET must be at least 32 bytes Base64-encoded. Generate one with: openssl rand -base64 32");
         }
         return new SecretKeySpec(bytes, "HmacSHA256");
-    }
-
-    @Bean
-    JwtEncoder jwtEncoder() {
-        return new NimbusJwtEncoder(new ImmutableSecret<>(secretKey()));
     }
 
     @Bean
