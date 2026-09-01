@@ -18,8 +18,8 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/**").authenticated()
-                        // Swagger UI, actuator health. Neither carries notification data,
-                        // everything readable goes through /api.
+                        // Actuator health, which carries no notification data. Everything
+                        // readable goes through /api.
                         .anyRequest().permitAll())
                 .oauth2ResourceServer(o -> o.jwt(Customizer.withDefaults()))
                 .build();
