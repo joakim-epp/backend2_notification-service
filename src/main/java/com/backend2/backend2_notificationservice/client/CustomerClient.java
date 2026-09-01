@@ -2,20 +2,20 @@ package com.backend2.backend2_notificationservice.client;
 
 import com.backend2.backend2_notificationservice.exception.CustomerNotFoundException;
 import com.backend2.backend2_notificationservice.exception.CustomerServiceUnavailableException;
-import org.springframework.beans.factory.annotation.Value;
+import feign.FeignException;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
 
+/**
+ * Turns the customer service's answers into this service's own exceptions, so nothing outside this
+ * class has to know that Feign is what makes the call.
+ */
 @Component
 public class CustomerClient {
 
-    private final RestClient restClient;
-    private final String baseUrl;
+    private final CustomerApi customerApi;
 
-    public CustomerClient(RestClient restClient, @Value("${customer.service.url}") String baseUrl) {
-        this.restClient = restClient;
-        this.baseUrl = baseUrl;
+    public CustomerClient(CustomerApi customerApi) {
+        this.customerApi = customerApi;
     }
 
     /**
@@ -25,20 +25,15 @@ public class CustomerClient {
      */
     public CustomerSummary findById(Long customerId) {
         try {
-            CustomerSummary customer = restClient.get()
-                    .uri(baseUrl + "/api/customers/{id}", customerId)
-                    .retrieve()
-                    .onStatus(status -> status.value() == 404, (request, response) -> {
-                        throw new CustomerNotFoundException(customerId);
-                    })
-                    .body(CustomerSummary.class);
-
+            CustomerSummary customer = customerApi.findById(customerId);
             if (customer == null) {
                 throw new CustomerServiceUnavailableException(
                         "Customer service responded without a body", null);
             }
             return customer;
-        } catch (RestClientException e) {
+        } catch (FeignException.NotFound e) {
+            throw new CustomerNotFoundException(customerId);
+        } catch (FeignException e) {
             throw new CustomerServiceUnavailableException("Could not reach the customer service", e);
         }
     }
