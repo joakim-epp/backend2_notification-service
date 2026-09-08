@@ -7,6 +7,8 @@ import java.util.List;
 
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
 
+    List<Notification> findTop100ByOrderByCreatedAtDescIdDesc();
+
     /** Newest first, which is the order the log is read in. */
     List<Notification> findByCustomerIdOrderByCreatedAtDesc(Long customerId);
 }

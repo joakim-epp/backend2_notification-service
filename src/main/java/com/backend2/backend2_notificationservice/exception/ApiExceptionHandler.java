@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -19,6 +20,13 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+
+    @ExceptionHandler(BadCredentialsException.class)
+    ProblemDetail invalidCredentials(HttpServletRequest request) {
+        return problem(HttpStatus.UNAUTHORIZED, "Inloggningen misslyckades",
+                "Fel användarnamn eller lösenord", "INVALID_CREDENTIALS",
+                "/problems/invalid-credentials", request);
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ProblemDetail validationFailed(MethodArgumentNotValidException e, HttpServletRequest request) {

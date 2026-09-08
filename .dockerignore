@@ -1,4 +1,6 @@
 target/
 .git/
 .idea/
+.env
+.env.*
 .mvn/wrapper/maven-wrapper.jar

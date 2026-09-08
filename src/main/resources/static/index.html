@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Notifieringar · Pensionatet</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <p class="eyebrow">Pensionatet</p>
+        <h1>Notifieringar</h1>
+      </div>
+      <button id="logout" class="secondary" hidden>Logga ut</button>
+    </header>
+
+    <form id="login">
+      <p>Logga in med samma uppgifter som i kundtjänsten.</p>
+      <label for="username">Användarnamn</label>
+      <input id="username" name="username" autocomplete="username" required>
+      <label for="password">Lösenord</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required>
+      <button id="login-button" type="submit">Logga in</button>
+    </form>
+
+    <p id="error" role="alert" hidden></p>
+
+    <section id="viewer" aria-label="Notifieringslogg" hidden>
+      <div class="toolbar">
+        <p id="status" role="status">Hämtar notifieringar…</p>
+        <button id="refresh" class="secondary" type="button">Uppdatera</button>
+      </div>
+      <pre id="log" aria-label="Notifieringstexter">Inga notifieringar ännu.</pre>
+      <p class="hint">De senaste 100 notifieringarna, nyast först. Uppdateras var tionde sekund.</p>
+    </section>
+  </main>
+</body>
+</html>

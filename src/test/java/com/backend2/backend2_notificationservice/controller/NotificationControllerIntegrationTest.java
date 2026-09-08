@@ -3,6 +3,9 @@ package com.backend2.backend2_notificationservice.controller;
 import com.backend2.backend2_notificationservice.TestcontainersConfiguration;
 import com.backend2.backend2_notificationservice.client.CustomerApi;
 import com.backend2.backend2_notificationservice.client.CustomerSummary;
+import com.backend2.backend2_notificationservice.dto.LoginRequest;
+import com.backend2.backend2_notificationservice.dto.LoginResponse;
+import com.backend2.backend2_notificationservice.model.Notification;
 import com.backend2.backend2_notificationservice.repository.NotificationRepository;
 import feign.FeignException;
 import feign.Request;
@@ -25,12 +28,15 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.hamcrest.Matchers.containsString;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -51,6 +57,84 @@ class NotificationControllerIntegrationTest {
     @BeforeEach
     void clear() {
         notificationRepository.deleteAll();
+    }
+
+    @Test
+    void frontendIsPublicButTheLogRequiresAuthentication() throws Exception {
+        mockMvc.perform(get("/index.html"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Notifieringar")));
+        mockMvc.perform(get("/api/notifications")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void recentLogContainsTheLatest100AcrossCustomers() throws Exception {
+        for (long i = 1; i <= 105; i++) {
+            Notification notification = new Notification();
+            notification.setCustomerId(i % 2 + 1);
+            notification.setBookingId(i);
+            notification.setRecipient("test@example.com");
+            notification.setMessage("Confirmation " + i);
+            notificationRepository.save(notification);
+        }
+        mockMvc.perform(get("/api/notifications").with(jwt()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(100))
+                .andExpect(jsonPath("$[0].message").value("Confirmation 105"))
+                .andExpect(jsonPath("$[99].message").value("Confirmation 6"));
+        verifyNoInteractions(customerApi);
+    }
+
+    @Test
+    void emptyLogReturnsAnEmptyArray() throws Exception {
+        mockMvc.perform(get("/api/notifications").with(jwt()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void loginRelaysCredentialsAndReturnsTheCustomerServicesTokenWithoutCaching() throws Exception {
+        LoginRequest credentials = new LoginRequest("admin", "test-password");
+        when(customerApi.login(credentials)).thenReturn(new LoginResponse("customer-issued-token"));
+        mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"admin\",\"password\":\"test-password\"}"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(jsonPath("$.token").value("customer-issued-token"));
+        verify(customerApi).login(credentials);
+    }
+
+    @Test
+    void badCredentialsReturn401() throws Exception {
+        when(customerApi.login(any())).thenThrow(feignError(401));
+        mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"admin\",\"password\":\"wrong\"}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.errorCode").value("INVALID_CREDENTIALS"));
+    }
+
+    @Test
+    void loginFailureReturns503WhenCustomerServiceIsDown() throws Exception {
+        when(customerApi.login(any())).thenThrow(feignError(503));
+        mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"admin\",\"password\":\"test-password\"}"))
+                .andExpect(status().isServiceUnavailable());
+    }
+
+    @Test
+    void loginFailureReturns503WhenCustomerServiceOmitsTheToken() throws Exception {
+        when(customerApi.login(any())).thenReturn(new LoginResponse(null));
+        mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"admin\",\"password\":\"test-password\"}"))
+                .andExpect(status().isServiceUnavailable());
+    }
+
+    @Test
+    void blankCredentialsAreRejectedBeforeCallingCustomerService() throws Exception {
+        mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"\",\"password\":\"\"}"))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(customerApi);
     }
 
     @Test

@@ -1,0 +1,24 @@
+:root { font-family: system-ui, sans-serif; color: #17232c; background: #f4f6f8; }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; }
+main { max-width: 1050px; margin: 48px auto; padding: 0 24px; }
+header, .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+header { margin-bottom: 28px; }
+.eyebrow { margin: 0 0 6px; color: #526475; font-size: 13px; }
+h1 { margin: 0; font-size: 28px; letter-spacing: -.6px; }
+form { max-width: 390px; background: white; padding: 24px; border: 1px solid #dbe1e7; border-radius: 8px; }
+form p { margin-top: 0; color: #526475; line-height: 1.5; }
+label { display: block; margin-bottom: 6px; font-size: 14px; font-weight: 600; }
+input { width: 100%; margin-bottom: 18px; padding: 11px; border: 1px solid #aab7c3; border-radius: 4px; font: inherit; }
+button { padding: 10px 16px; border: 1px solid #174e73; border-radius: 4px; background: #174e73; color: white; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+button.secondary { background: white; color: #174e73; border-color: #bac9d5; }
+button:hover { filter: brightness(.94); }
+button:disabled { opacity: .6; cursor: wait; }
+button:focus-visible, input:focus-visible { outline: 3px solid #80bbef; outline-offset: 3px; }
+#error { background: #fff0ef; color: #922b24; padding: 14px; border: 1px solid #edc5c1; border-radius: 4px; }
+.toolbar { margin-bottom: 12px; }
+#status, .hint { margin: 0; color: #526475; font-size: 13px; }
+#log { background: #17232c; color: #edf4f8; border-radius: 6px; padding: 22px; margin: 0; min-height: 320px; font: 14px/1.8 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.hint { margin-top: 12px; line-height: 1.5; }
+@media (max-width: 600px) { main { margin: 24px auto; padding: 0 16px; } #log { padding: 16px; font-size: 12px; } }

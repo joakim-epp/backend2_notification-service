@@ -39,7 +39,7 @@ public class NotificationController {
     }
 
     @GetMapping
-    public List<NotificationResponse> findByCustomer(@RequestParam @Positive Long customerId) {
-        return notificationService.findByCustomer(customerId);
+    public List<NotificationResponse> findByCustomer(@RequestParam(required = false) @Positive Long customerId) {
+        return customerId == null ? notificationService.findRecent() : notificationService.findByCustomer(customerId);
     }
 }

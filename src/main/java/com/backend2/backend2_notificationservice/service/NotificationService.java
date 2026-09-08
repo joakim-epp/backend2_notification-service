@@ -53,6 +53,13 @@ public class NotificationService {
     }
 
     @Transactional(readOnly = true)
+    public List<NotificationResponse> findRecent() {
+        return notificationRepository.findTop100ByOrderByCreatedAtDescIdDesc().stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<NotificationResponse> findByCustomer(Long customerId) {
         return notificationRepository.findByCustomerIdOrderByCreatedAtDesc(customerId).stream()
                 .map(this::toResponse)

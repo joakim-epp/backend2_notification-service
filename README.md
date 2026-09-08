@@ -24,6 +24,16 @@ docker compose up --build
 Tjänsten på <http://localhost:8082>, hälsokoll på
 <http://localhost:8082/actuator/health/readiness>.
 
+Startsidan visar en enkel notifieringslogg. Logga in med samma användarnamn och lösenord
+som i kundtjänsten. De senaste 100 sparade notifieringarna visas som text, nyast först,
+och hämtas automatiskt var tionde sekund när fliken är synlig. Inget kund-ID behövs.
+Sidan visar loggade bekräftelser, inte all teknisk applikationslogg.
+
+Inloggningen vidarebefordras av servern till kundtjänsten via `CUSTOMER_SERVICE_URL`.
+Webbläsaren anropar bara notifieringstjänsten, så samma sida fungerar lokalt och på Railway
+utan extra CORS-konfiguration. JWT sparas endast i sidans minne; efter omladdning loggar
+du in igen. En utgången token tar dig tillbaka till inloggningen.
+
 `docker compose up` i det här repot startar tjänsten och dess databas, inget mer. Kundtjänsten
 körs inte här, så anrop till `POST /api/notifications` svarar 503 tills den finns på
 `CUSTOMER_SERVICE_URL`. Hela systemet startas från kundtjänstens repo, vars `docker-compose.yml`
@@ -56,7 +66,7 @@ docker run --rm -p 5434:5432 \
 JAVA_HOME=$(/usr/libexec/java_home -v 21) ./mvnw test
 ```
 
-10 tester. Postgres startas av Testcontainers, så Docker måste vara igång.
+18 tester. Postgres startas av Testcontainers, så Docker måste vara igång.
 
 `NotificationControllerIntegrationTest` gör riktiga HTTP-anrop genom hela kedjan: säkerhetsfilter,
 controller, service, repository och databas. Bara kundtjänsten byts ut, och det sker på
@@ -64,12 +74,15 @@ Feign-gränssnittet, så klientens översättning av dess svar till 404 och 503 
 
 ## API
 
-Alla endpoints kräver `Authorization: Bearer <token>`. Token hämtas från kundtjänstens
-`POST /api/auth/login`.
+Alla notifieringsendpoints kräver `Authorization: Bearer <token>`. Token hämtas från
+kundtjänstens `POST /api/auth/login`, eller via samma endpoint på notifieringstjänsten
+som vidarebefordrar inloggningen till kundtjänsten.
 
 | Metod | Path | Svar |
 |---|---|---|
+| POST | `/api/auth/login` | 200 `{token}` · 400 · 401 · 503 |
 | POST | `/api/notifications` | 201 · 400 · 401 · 404 · 409 · 503 |
+| GET | `/api/notifications` | 200, de senaste 100 notifieringarna · 401 |
 | GET | `/api/notifications?customerId=1` | 200 · 400 · 401 |
 
 ```bash
@@ -148,6 +161,17 @@ Egen Postgres, ingen annan tjänst läser i den. Schemat skapas av Hibernate
 Rader uppdateras och raderas aldrig, tabellen är loggen. Mottagare och meddelandetext sparas som
 de såg ut när bekräftelsen gick ut. Att läsa tillbaka dem från kundtjänsten i efterhand skulle
 skriva om historiken så fort en kund byter e-postadress.
+
+## Railway
+
+Deploya det här repot som en separat Railway-tjänst. `railway.json` väljer repots `Dockerfile`
+och hälsokontrollen `/actuator/health/readiness`. Tjänsten använder en egen PostgreSQL-databas.
+Sätt `PORT=8082`, `SPRING_DATASOURCE_URL` (JDBC), `SPRING_DATASOURCE_USERNAME`,
+`SPRING_DATASOURCE_PASSWORD`, samma `JWT_SECRET` som kundtjänsten och `CUSTOMER_SERVICE_URL`
+till kundtjänstens interna Railway-adress. Kund- och notifieringstjänsten ska ligga i samma
+projekt/environment på Joakims konto. Booking ligger på en annan gruppmedlems konto;
+generera därför en publik domän på port 8082 för notifieringsloggen, API-test och framtida
+anrop från booking.
 
 ## Kubernetes
 
