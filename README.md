@@ -178,3 +178,11 @@ anrop från booking.
 Manifesten för hela systemet ligger samlade i kundtjänstens repo under `k8s/`, inklusive
 `notification-service.yaml` och `notification-db.yaml`. De använder imagen
 `notification-service:latest`, som byggs av `docker compose build` i det repot.
+
+### Publicerade Docker-versioner
+
+Varje push till `main` publicerar en Docker-image med taggen
+`build-<run_number>.<run_attempt>`, till exempel `build-42.1`. En omkörning av imagebygget får en ny
+tag, till exempel `build-42.2`. Versionen visas i körningens sammanfattning i GitHub
+Actions. Imagen har också versions- och commitinformation i sina OCI-labels.
+Hämta en viss version med `docker pull joakimepp/notifications-service:build-42.1`.
